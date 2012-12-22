@@ -12,7 +12,7 @@ All you need is :
 	* For example: 
 		* I use an alix http://pcengines.ch
     	* Also tested with a RaspberryPi http://raspberrypi.org
-		* Bifferboard http://bifferos.net
+		* Bifferboard http://bifferos.co.uk/
 
 
 First flash the code in the directory tiny_i2c_433 onto an AtTiny. The main file RemoteSwitch.c documents how to connect it to the transmitter and the i2c bus.
