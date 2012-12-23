@@ -5,11 +5,9 @@ Remote control power switches from a simple web application.
 
 All you need is :
 * Remote switched power plugs that operate at 433MHz
-* AtTiny45 http://www.conrad.ch/ce/de/product/154219/ATMEL-AVR-RISC-Microcontroller-Atmel-ATTINY45-20PU-Gehaeuseart-DIL-8-Clock-Speed-20-MHz-Flash-Speicher-4-kB-Speicher-RA/SHOP_AREA_29142&promotionareaSearchDetail=005
+* AtTiny45 http://www.conrad.ch/ce/de/product/154219/
 * 433MHz transmitter http://dx.com/p/433mhz-wireless-transmitter-module-superregeneration-for-arduino-green-149254
-* A small linux device that has ic2 available and can run python. 
-	* Best if it runs debian. 
-	* For example: 
+* A small linux (preferrably debian) device that has ic2 available and can run python. For example: 
 		* I use an alix http://pcengines.ch
     	* Also tested with a RaspberryPi http://raspberrypi.org
 		* Bifferboard http://bifferos.co.uk/
