@@ -1,31 +1,31 @@
 extern "C" {
-  #include "socket.h"
+  #include "utility/socket.h"
   #include "string.h"
 }
 
-#include "WProgram.h"
+#include <Arduino.h>
 
-#include "Ethernet.h"
-#include "Client.h"
-#include "Server.h"
+#include "EncEthernet.h"
+#include "EncClient.h"
+#include "EncServer.h"
 
-uint16_t Client::_srcport = 0;
+uint16_t EncClient::_srcport = 0;
 
-Client::Client(uint8_t sock) {
+EncClient::EncClient(uint8_t sock) {
   _sock = sock;
 }
 
-Client::Client(uint8_t *ip, uint16_t port) {
+EncClient::EncClient(uint8_t *ip, uint16_t port) {
   _ip = ip;
-  _port = port;  
+  _port = port;
   _sock = 255;
 }
 
-uint8_t Client::connect() {
+uint8_t EncClient::connect() {
   if (_sock != 255)
     return 0;
 #ifdef ETHERSHIELD_DEBUG
-    sprintf(_DEBUG, "Client::connect() DEBUG A. _sock = %d",
+    sprintf(_DEBUG, "EncClient::connect() DEBUG A. _sock = %d",
             _sock);
 #endif
 
@@ -36,18 +36,18 @@ uint8_t Client::connect() {
       break;
     }
   }
-  
+
 #ifdef ETHERSHIELD_DEBUG
-    sprintf(_DEBUG, "Client::connect() DEBUG B. _sock = %d",
+    sprintf(_DEBUG, "EncClient::connect() DEBUG B. _sock = %d",
             _sock);
 #endif
   if (_sock == 255)
     return 0;
-    
+
   _srcport++;
   if (_srcport + 1024 == 0) _srcport = 0;
   socket(_sock, Sn_MR_TCP, _srcport + 1024, 0);
-  
+
 #ifdef ETHERSHIELD_DEBUG
     sprintf(_DEBUG, "Client::connect() DEBUG C. _sock = %d",
             _sock);
@@ -56,7 +56,7 @@ uint8_t Client::connect() {
     _sock = 255;
     return 0;
   }
-    
+
 #ifdef ETHERSHIELD_DEBUG
     sprintf(_DEBUG, "Client::connect() DEBUG D. _sock = %d", _sock);
 #endif
@@ -67,41 +67,53 @@ uint8_t Client::connect() {
       return 0;
     }
   }
-  
+
 #ifdef ETHERSHIELD_DEBUG
-    sprintf(_DEBUG, "Client::connect() DEBUG E. _sock = %d", _sock);
+    sprintf(_DEBUG, "EncClient::connect() DEBUG E. _sock = %d", _sock);
 #endif
   return 1;
 }
 
 #ifdef ETHERSHIELD_DEBUG
-char *Client::debug() {
+char *EncClient::debug() {
     return _DEBUG;
 }
 #endif
 
-void Client::write(uint8_t b) {
-  if (_sock != 255)
+size_t EncClient::write(uint8_t b) {
+  if(_sock != 255)
+  {
     send(_sock, &b, 1);
+    return 1;
+  }
+  return 0;
 }
 
-void Client::write(const char *str) {
+size_t EncClient::write(const char *str) {
   if (_sock != 255)
+  {
     send(_sock, (const uint8_t *)str, strlen(str));
+    return strlen(str);
+  }
+  return 0;
 }
 
-void Client::write(const uint8_t *buf, size_t size) {
+size_t EncClient::write(const uint8_t *buf, size_t size) {
   if (_sock != 255)
+  {
     send(_sock, buf, size);
+    return size;
+  }
+  return 0;
 }
 
-int Client::available() {
+int EncClient::available() {
   if (_sock != 255)
     return getSn_RX_RSR(_sock);
   return 0;
 }
 
-int Client::read() {
+int EncClient::read() {
   uint8_t b;
   if (!available())
     return -1;
@@ -109,32 +121,32 @@ int Client::read() {
   return b;
 }
 
-void Client::flush() {
+void EncClient::flush() {
   while (available())
     read();
 }
 
-void Client::stop() {
+void EncClient::stop() {
   if (_sock == 255)
     return;
-  
+
   // attempt to close the connection gracefully (send a FIN to other side)
   disconnect(_sock);
   unsigned long start = millis();
-  
+
   // wait a second for the connection to close
   while (status() != SOCK_CLOSED && millis() - start < 1000)
     delay(1);
-    
+
   // if it hasn't closed, close it forcefully
   if (status() != SOCK_CLOSED)
     close(_sock);
-  
-  EthernetClass::_server_port[_sock] = 0;
+
+  EncEthernetClass::_server_port[_sock] = 0;
   _sock = 255;
 }
 
-uint8_t Client::connected() {
+uint8_t EncClient::connected() {
   if (_sock == 255) {
     return 0;
   } else {
@@ -144,7 +156,7 @@ uint8_t Client::connected() {
   }
 }
 
-uint8_t Client::status() {
+uint8_t EncClient::status() {
   if (_sock == 255) {
     return SOCK_CLOSED;
   } else {
@@ -157,14 +169,14 @@ uint8_t Client::status() {
 // if-statement.  this lets us stay compatible with the Processing network
 // library.
 
-uint8_t Client::operator==(int p) {
+uint8_t EncClient::operator==(int p) {
   return _sock == 255;
 }
 
-uint8_t Client::operator!=(int p) {
+uint8_t EncClient::operator!=(int p) {
   return _sock != 255;
 }
 
-Client::operator bool() {
+EncClient::operator bool() {
   return _sock != 255;
 }

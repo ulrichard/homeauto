@@ -2,13 +2,13 @@
 #define Ethernet_h
 
 #include <inttypes.h>
-#include "Client.h"
-#include "Server.h"
+#include "EncClient.h"
+#include "EncServer.h"
 extern "C" {
     #include "utility/socket.h"
 }
 
-class EthernetClass {
+class EncEthernetClass {
 private:
 public:
   static uint8_t _state[MAX_SOCK_NUM];
@@ -24,7 +24,7 @@ public:
   friend class Server;
 };
 
-extern EthernetClass Ethernet;
+extern EncEthernetClass EncEthernet;
 
 #ifdef ETHERSHIELD_DEBUG
 char *debug2str(uint8_t debugCode);

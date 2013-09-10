@@ -1,10 +1,10 @@
 // Ethernet slave for the home simple automation
 
 #include "IR.h"
+#include <EncEthernet.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <Ethernet.h>
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[]  = { 192, 168, 2, 9 };
@@ -12,11 +12,11 @@ byte ip[]  = { 192, 168, 2, 9 };
 
 static const uint8_t PIN_status_LED = 13;
 
-EthernetServer server(80);
+EncServer server(80);
 
 void setup()
 {
-	Ethernet.begin(mac, ip);
+	EncEthernet.begin(mac, ip);
 	server.begin();
 
 
