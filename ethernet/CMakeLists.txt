@@ -18,9 +18,18 @@ INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SPI)
 INCLUDE_DIRECTORIES(ENC28J60)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+ADD_DEFINITIONS(-D __PROG_TYPES_COMPAT__)
+
 generate_arduino_firmware(ethernet
     SKETCH ../ethernet
-	SRCS ethernet.ino IR.cpp ENC28J60/EncEthernet.cpp ENC28J60/EncClient.cpp ENC28J60/EncServer.cpp
+	SRCS	ethernet.ino 
+		IR.cpp
+		ENC28J60/EncEthernet.cpp
+		ENC28J60/EncClient.cpp
+		ENC28J60/EncServer.cpp
+		ENC28J60/utility/socket.c
+		ENC28J60/utility/enc28j60.c
+		ENC28J60/utility/ip_arp_udp_tcp.c
 	PROGRAMMER stk500v2
     PORT  ${AVRDUDE_PORT}
     BOARD ${AVR_DEVICE}
