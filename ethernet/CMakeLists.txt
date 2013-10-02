@@ -10,9 +10,11 @@ PROJECT(ethernet)
 
 SET(AVR_DEVICE     atmega328)
 SET(AVRDUDE_DEVICE atmega328p)
-SET(AVRDUDE_PORT   /dev/ttyACM0)
-SET(AVRDUDE_PROGRAMMER   stk500v2) # diamex AVR von www.reichelt.de
-#SET(AVRDUDE_PROGRAMMER   USBasp)  # www.fischl.de
+#SET(AVRDUDE_PORT   /dev/ttyACM0)
+SET(AVRDUDE_PORT   /dev/ttyUSB0)
+#SET(AVRDUDE_PROGRAMMER   stk500v2) # diamex AVR von www.reichelt.de
+#SET(AVRDUDE_PROGRAMMER   USBasp)   # www.fischl.de
+SET(AVRDUDE_PROGRAMMER    arduino)  # Arduino
 
 INCLUDE_DIRECTORIES(/usr/share/arduino/libraries/SPI)
 INCLUDE_DIRECTORIES(ENC28J60)
@@ -35,10 +37,17 @@ generate_arduino_firmware(ethernet
     BOARD ${AVR_DEVICE}
 )
 
-ADD_CUSTOM_TARGET(flash
-			avrdude -P ${AVRDUDE_PORT} -p ${AVRDUDE_DEVICE} -c ${AVRDUDE_PROGRAMMER} -Uflash:w:ethernet.hex
-	DEPENDS ethernet
-)
+#IF(${AVRDUDE_PROGRAMMER} STREQUAL "arduino")
+	ADD_CUSTOM_TARGET(flash
+				avrdude -P ${AVRDUDE_PORT} -p ${AVRDUDE_DEVICE} -c ${AVRDUDE_PROGRAMMER} -b 57600 -F -u -Uflash:w:ethernet.hex
+		DEPENDS ethernet
+	)
+#ELSE(AVRDUDE_PROGRAMMER == "arduino")
+#	ADD_CUSTOM_TARGET(flash
+#				avrdude -P ${AVRDUDE_PORT} -p ${AVRDUDE_DEVICE} -c ${AVRDUDE_PROGRAMMER} -Uflash:w:ethernet.hex
+#		DEPENDS ethernet
+#	)
+#ENDIF(AVRDUDE_PROGRAMMER == "arduino")
 
 # for fuse settings see http://www.engbedded.com/fusecalc/
 SET(LFUSE 0xbf) # ext crystal
