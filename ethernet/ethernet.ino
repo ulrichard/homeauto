@@ -1,10 +1,49 @@
+// This program is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 2 of the License, or (at your option) any later
+// version.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+// Created by Richard Ulrich <richi@paraeasy.ch>
 // Ethernet slave for the home simple automation
+// With a Nokia display to display the state of the bitcoin miner
 
 #include "IR.h"
+#include "nokia3310lcd.h"
 #include <EncEthernet.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
+
+//  AtMega 328
+//                      +-\/-+
+//              RST -> 1|    |28 <-  SCL  -------------- C  I
+//         uart RXD -> 2|    |27 <-> SDA  -------------- D  2
+//         uart TXD <- 3|    |26                   +---- V  C
+//  ENC28J60 INT -- D2 4|    |25                   |  +- G 
+//      LED red  <- D3 5|    |24                   |  |   nokia 5110 LCD
+//                     6|    |23 -> backlight --+  |  |  +--------------+
+//                VCC  7|    |22  GND ----------|--|--+--|        GND ->|
+//                GND  8|    |21                +--|-----|  backlight ->|
+//            crystal  9|    |20  VCC     ---------+-----|        VCC ->|
+//            crystal 10|    |19 D13 -> SCK--------------|        SCK ->|  x-> ENC28J60 SCK
+//                    11|    |18 D12 <- MISO  +----------|       MOSI ->|  x-> ENC28J60 SO
+//                    12|    |17 D11 -> MOSI -+     +----|   cmd/data ->|  x-> ENC28J60 SI
+// LCD chip select <- 13|    |16 D10 <- SS          | +--|chip enable ->|  x-> ENC28J60 CS
+// LCD reset  |   +-<-14|    |15 D9 -> LCD cmd/data-+ |+-|      reset ->|
+//            |   |     +----+                        || +--------------+                  
+//            +---|-----------------------------------+|
+//                +------------------------------------+  
+//
+// ENC28J60 Ethernet adapter -> connections from top:
+// http://www.geeetech.com/wiki/index.php/Arduino_ENC28J60_Ethernet_Module
+// 
+// 	  CLK out  |  INT
+//	      SOL  |  SO
+//         SI  |  SCK
+//         CS  |  reset
+//        VCC  |  GND
 
 // the mac and ip of the Arduino Ethernet shield
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
@@ -13,28 +52,14 @@ byte ip[]  = {192, 168, 2, 9};
 // Enter the IP address of the web server
 byte ulrichardIp[] = {192, 168, 2, 7}; // ulrichard.ch
 
-//                      +-\/-+
-//              RST -> 1|    |28
-//         uart RXD -> 2|    |27
-//         uart TXD <- 3|    |26
-//  ENC28J60 INT -- D2 4|    |25
-//      LED red  <- D3 5|    |24
-//                     6|    |23
-//                VCC  7|    |22 GND
-//                GND  8|    |21
-//            crystal  9|    |20 VCC
-//            crystal 10|    |19 D13 -> ENC28J60 SCK
-//                    11|    |18 D12 -> ENC28J60 SO
-//                    12|    |17 D11 -> ENC28J60 SI
-//                    13|    |16 D10 -> ENC28J60 CS
-//                    14|    |15  
-//                      +----+                   
-
+// pin assignments
 static const uint8_t PIN_status_LED = 3;
+static const uint8_t PIN_IR_LED     = 9; // OC1A -> infrared transmitter LED.
+static const uint8_t LCD_BACKLIGHT  = A0;
 
 EncServer server(80); // Port 80 is http
-EncClient ulrichardClient(ulrichardIp, 80);
-
+EncClient ulrichardClient(ulrichardIp, 9332);
+Nokia3310LCD  disp(9, 8, 7);
 
 void setup()
 {
@@ -43,8 +68,20 @@ void setup()
 	EncEthernet.begin(mac, ip);
 	server.begin();
 
+	pinMode(LCD_BACKLIGHT, OUTPUT);
+    digitalWrite(LCD_BACKLIGHT, LOW);
 
-	IR::initialise(0); // IR receiver hardware is on pin2.
+	SPI.begin();
+	SPI.setClockDivider(SPI_CLOCK_DIV64); // 250 kHz
+
+	disp.init();
+    disp.LcdContrast(0x40);
+	disp.LcdClear();
+	disp.LcdGotoXYFont(1, 1);
+	disp.LcdStr(Nokia3310LCD::FONT_1X, "hello world");
+	disp.LcdUpdate();
+
+//	IR::initialise(0); // IR receiver hardware is on pin2. -> conflicting with ethernet
 
 	pinMode(4, OUTPUT);
 	digitalWrite(4, LOW);
@@ -61,7 +98,8 @@ void setup()
 
 void loop()
 {
-	// Check if we received some IR code
+/* -> pin conflicting with ethernet
+	// Check if we received some IR code 
 	if(!IR::queueIsEmpty())
 	{
 		digitalWrite(PIN_status_LED, HIGH);
@@ -75,18 +113,22 @@ void loop()
 		}
 		digitalWrite(PIN_status_LED, LOW);
 	}
+*/
 
 	// Check if we received something over ethernet
 	EncClient client = server.available();
 	if(client)
 	{
-		Serial.println("____");
-		Serial.println("Web: ");
+//		Serial.println("____");
+//		Serial.println("Web: ");
 
 		// an http request ends with a blank line
 		boolean current_line_is_blank = true;
 		while(client.connected())
 		{
+			disp.LcdClear();
+			uint8_t x = 1, y = 1;
+
 			if(client.available())
 			{
 				char c = client.read();
@@ -116,14 +158,19 @@ void loop()
 					// we're starting a new line
 					current_line_is_blank = true;
 
-					Serial.println("");
+//					Serial.println("");
+
+					x = 1;
+					++y;
 				}
 				else if(c != '\r')
 				{
 					// we've gotten a character on the current line
 					current_line_is_blank = false;
 
-					Serial.print(c);
+//					Serial.print(c);
+					disp.LcdGotoXYFont(x, y);
+					disp.LcdChr(Nokia3310LCD::FONT_1X, c);
 				}
 			}
 		}
@@ -132,19 +179,35 @@ void loop()
 		client.stop();
 	}
 
-/*
-	// Check if the web server is reachable
+
+	// Check the state of the bitcoin miner
+	// https://en.bitcoin.it/wiki/P2Pool#Web_interface
 	if(ulrichardClient.connect())
 	{
 		digitalWrite(PIN_status_LED, LOW);
 //		Serial.println("ulrichard.ch reachable");
+
+		ulrichardClient.println("GET /local_stats HTTP/1.1");
+		ulrichardClient.println("Host: 192.168.2.7:9332");
+		ulrichardClient.println();
+
+		
 	}
 	else
 	{
 		digitalWrite(PIN_status_LED, HIGH);
 //		Serial.println("no connection to ulrichard.ch");
+
+		disp.LcdClear();
+		disp.LcdGotoXYFont(1, 1);
+		disp.LcdStr(Nokia3310LCD::FONT_1X, "could not");
+		disp.LcdGotoXYFont(1, 2);
+		disp.LcdStr(Nokia3310LCD::FONT_1X, "connect to");
+		disp.LcdGotoXYFont(1, 3);
+		disp.LcdStr(Nokia3310LCD::FONT_1X, "ulrichard.ch:9332");
+		disp.LcdUpdate();
 	}
 	ulrichardClient.stop();
-*/
+
 }
 

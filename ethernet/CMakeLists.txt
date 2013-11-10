@@ -26,6 +26,7 @@ ADD_DEFINITIONS(-D __PROG_TYPES_COMPAT__) # for old pgm_char
 generate_arduino_firmware(ethernet
     SKETCH ../ethernet
 	SRCS	ethernet.ino 
+		nokia3310lcd.cpp
 		IR.cpp
 		ENC28J60/EncEthernet.cpp
 		ENC28J60/EncClient.cpp
@@ -43,12 +44,12 @@ IF(${AVRDUDE_PROGRAMMER} STREQUAL "arduino")
 				avrdude -P ${AVRDUDE_PORT} -p ${AVRDUDE_DEVICE} -c ${AVRDUDE_PROGRAMMER} -b 57600 -F -u -Uflash:w:ethernet.hex
 		DEPENDS ethernet
 	)
-ELSE(AVRDUDE_PROGRAMMER == "arduino")
+ELSE(${AVRDUDE_PROGRAMMER} STREQUAL "arduino")
 	ADD_CUSTOM_TARGET(flash
 				avrdude -P ${AVRDUDE_PORT} -p ${AVRDUDE_DEVICE} -c ${AVRDUDE_PROGRAMMER} -Uflash:w:ethernet.hex
 		DEPENDS ethernet
 	)
-ENDIF(AVRDUDE_PROGRAMMER == "arduino")
+ENDIF(${AVRDUDE_PROGRAMMER} STREQUAL "arduino")
 
 # for fuse settings see http://www.engbedded.com/fusecalc/
 SET(LFUSE 0xbf) # ext crystal
