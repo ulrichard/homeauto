@@ -23,7 +23,7 @@
 //         uart TXD <- 3|    |26                   +---- V  C
 //  ENC28J60 INT -- D2 4|    |25                   |  +- G 
 //      LED red  <- D3 5|    |24                   |  |   nokia 5110 LCD
-//                     6|    |23 -> backlight --+  |  |  +--------------+
+//                  D4 6|    |23 -> backlight --+  |  |  +--------------+
 //                VCC  7|    |22  GND ----------|--|--+--|        GND ->|
 //                GND  8|    |21                +--|-----|  backlight ->|
 //            crystal  9|    |20  VCC     ---------+-----|        VCC ->|
@@ -61,6 +61,9 @@ EncServer server(80); // Port 80 is http
 EncClient ulrichardClient(ulrichardIp, 9332);
 Nokia3310LCD  disp(9, 8, 7);
 
+char linebuf[128];
+uint16_t linepos;
+
 void setup()
 {
 	Serial.begin(115200);
@@ -71,8 +74,8 @@ void setup()
 	pinMode(LCD_BACKLIGHT, OUTPUT);
     digitalWrite(LCD_BACKLIGHT, LOW);
 
-	SPI.begin();
-	SPI.setClockDivider(SPI_CLOCK_DIV64); // 250 kHz
+//	SPI.begin();
+//	SPI.setClockDivider(SPI_CLOCK_DIV64); // 250 kHz
 
 	disp.init();
     disp.LcdContrast(0x40);
@@ -115,6 +118,7 @@ void loop()
 	}
 */
 
+/* first testing the client part
 	// Check if we received something over ethernet
 	EncClient client = server.available();
 	if(client)
@@ -131,7 +135,7 @@ void loop()
 
 			if(client.available())
 			{
-				char c = client.read();
+				const char c = client.read();
 				// if we've gotten to the end of the line (received a newline
 				// character) and the line is blank, the http request has ended,
 				// so we can send a reply
@@ -173,15 +177,73 @@ void loop()
 					disp.LcdChr(Nokia3310LCD::FONT_1X, c);
 				}
 			}
+			disp.LcdUpdate();
 		}
 		// give the web browser time to receive the data
 		delay(1);
 		client.stop();
 	}
-
+*/
 
 	// Check the state of the bitcoin miner
 	// https://en.bitcoin.it/wiki/P2Pool#Web_interface
+	linepos = 0;
+	bool foundPrev = false, foundColon = false;
+	uint32_t hashrate = 0;
+	while(ulrichardClient.connected())
+	{
+		digitalWrite(PIN_status_LED, LOW);
+
+		if(!ulrichardClient.available())
+			continue;
+		const char c = ulrichardClient.read();
+
+		if('\n' == c)
+		{
+			linebuf[linepos++] = '\0';
+
+			if(0 == hashrate)
+			{
+				disp.LcdGotoXYFont(1, 1);
+				disp.LcdStr(Nokia3310LCD::FONT_1X, linebuf);
+				disp.LcdUpdate();
+			}
+
+			if(foundColon)
+			{
+				hashrate = atoi(linebuf);         // in H/s
+				hashrate /= (1024 * 1024 * 1024); // GH/s
+
+				sprintf(linebuf, "%d GH/s", hashrate);
+
+				disp.LcdGotoXYFont(1, 1);
+				disp.LcdStr(Nokia3310LCD::FONT_1X, linebuf);
+				disp.LcdUpdate();
+
+				foundColon = foundPrev = false;
+			}
+			else if(strncmp("miner_hash_rates", linebuf, 16))
+				foundPrev = true;
+
+
+			linepos = 0;
+		}
+		else if('\r' == c)
+			continue;
+		else if(0 == linepos && (' ' == c || '*' == c || '\"' == c))
+			continue; // trim left
+		else if(foundPrev && !foundColon)
+		{
+			if(':' == c)
+				foundColon = true;
+			continue;
+		}
+		else if(linepos + 2 < sizeof(linebuf))
+			linebuf[linepos++] = c;
+	}
+	ulrichardClient.stop();
+	delay(10);
+		 
 	if(ulrichardClient.connect())
 	{
 		digitalWrite(PIN_status_LED, LOW);
@@ -207,7 +269,7 @@ void loop()
 		disp.LcdStr(Nokia3310LCD::FONT_1X, "ulrichard.ch:9332");
 		disp.LcdUpdate();
 	}
-	ulrichardClient.stop();
+	
 
 }
 
