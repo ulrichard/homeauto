@@ -9,6 +9,7 @@ rf = rf433mhz.rf433mhz(0x11, 21, 0) # bus is 0 on the alix, and 1 on the raspber
 devices = {'A' : -1
 		  ,'B' : -1
 		  ,'C' : -1
+		  ,'D' : -1
 		  }
 
 def preparePage():
