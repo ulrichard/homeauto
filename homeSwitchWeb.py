@@ -27,6 +27,8 @@ def preparePage():
 			page += "<b><img src='/static/" + p + "_0.png' alt='" + p + " off'></b>"
 		page += "</a></td></tr>"
 	page += "</table><br>Icons from:<br>http://www.iconarchive.com<br>http://www.pelfusion.com"
+
+    page += '<link rel="shortcut icon" href="{{ url_for(\'static\', filename=\'favicon.ico\') }}"'
 	return page
 
 
