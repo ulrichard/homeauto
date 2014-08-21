@@ -2,7 +2,7 @@
 # script to send commands to the power wall plugs over 433mhz
 # this script communicates over i2c with the atiny that is connected to the 433mhz transmitter
 
-import smbus, time
+import smbus, time, argparse
 
 class rf433mhz:
 	def __init__(self, i2cSlaveAddr = 0x11, plugAddress = 21, i2cBusNbr = 1):
@@ -32,12 +32,18 @@ class rf433mhz:
 
 # Main program
 if __name__ == "__main__":
-	rf = rf433mhz(0x11, 21, 1) # bus is 0 on the alix, and 1 on the raspberrypi
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--bus', type=int, default=0, help='the i2c bus: 0 on the alix, 1 on the RaspberryPi')
+    parser.add_argument('--addr', type=int, default=21, help='the address of the plug')
+    parser.add_argument('--device', type=char, default='B', help='the device letter (A B C or D) of the plug')
+    parser.add_argument('--on', type=bool, default=True, help='end on or off command')
+    args = parser.parse_args()
 
-	for i in range(3):
-		rf.switchOn('B')
-		time.sleep(2.0)
-		rf.switchOff('B')
-		time.sleep(2.0)
+    rf = rf433mhz(0x11, args.addr, args.bus)
+
+    if args.on:
+        rf.switchOn(args.device)
+    else:
+        rf.switchOff(args.device)
 
 
