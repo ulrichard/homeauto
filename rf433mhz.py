@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--bus', type=int, default=0, help='the i2c bus: 0 on the alix, 1 on the RaspberryPi')
     parser.add_argument('--addr', type=int, default=21, help='the address of the plug')
-    parser.add_argument('--device', type=char, default='B', help='the device letter (A B C or D) of the plug')
+    parser.add_argument('--device', default='B', help='the device letter (A B C or D) of the plug')
     parser.add_argument('--on', type=bool, default=True, help='end on or off command')
     args = parser.parse_args()
 
