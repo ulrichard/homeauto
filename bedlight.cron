@@ -1,0 +1,16 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+
+# turn the light on 6:15 to 7:15 on workdays
+15 6 * * 1-5 root  python /home/richi/src/homeauto/rf433mhz.py --bus 0 --addr 21 --device B --on 1 > /dev/null
+15 7 * * 1-5 root  python /home/richi/src/homeauto/rf433mhz.py --bus 0 --addr 21 --device B --on 0 > /dev/null
+
+# turn the light on 8:00 to 9:00 on weekends
+0 8 * * 6-7 root  python /home/richi/src/homeauto/rf433mhz.py --bus 0 --addr 21 --device B --on 1 > /dev/null
+0 9 * * 6-7 root  python /home/richi/src/homeauto/rf433mhz.py --bus 0 --addr 21 --device B --on 0 > /dev/null
+
+# turn the light off at 23:00
+0 23 * * * root python /home/richi/src/homeauto/rf433mhz.py --bus 0 --addr 21 --device B --on 0 > /dev/null
+
+
