@@ -36,14 +36,16 @@ if __name__ == "__main__":
     parser.add_argument('--bus', type=int, default=0, help='the i2c bus: 0 on the alix, 1 on the RaspberryPi')
     parser.add_argument('--addr', type=int, default=21, help='the address of the plug')
     parser.add_argument('--device', default='B', help='the device letter (A B C or D) of the plug')
-    parser.add_argument('--on', type=bool, default=True, help='end on or off command')
+    parser.add_argument('--on', type=int, default=1, help='send on or off command (use 0 or 1)')
     args = parser.parse_args()
 
     rf = rf433mhz(0x11, args.addr, args.bus)
 
-    if args.on:
+    if args.on != 0:
         rf.switchOn(args.device)
+	print 'swithing on %d %s' % (args.addr, args.device)
     else:
         rf.switchOff(args.device)
+	print 'swithing off %d %s' % (args.addr, args.device)
 
 
